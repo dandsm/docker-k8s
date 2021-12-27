@@ -1,0 +1,24 @@
+sudo: required
+language: generic
+
+services:
+  - docker
+
+before_install:
+  - docker build -t dandsm/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true dandsm/react-test npm test
+
+after_success:
+  - docker build -t dandsm/multi-client ./client
+  - docker build -t dandsm/multi-nginx ./nginx
+  - docker build -t dandsm/multi-server ./server
+  - docker build -t dandsm/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push dandsm/multi-client
+  - docker push dandsm/multi-nginx
+  - docker push dandsm/multi-server
+  - docker push dandsm/multi-worker
