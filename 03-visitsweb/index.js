@@ -1,22 +1,25 @@
-const express = require('express')
-const redis = require('redis')
-const process = require('process')
+import express from 'express'
+import redis from 'redis'
+import process from 'process'
 
 const app = express()
-const client = redis.createClient({
-  host: 'redis-server',
-  port: 6379,
-})
+
+const client = await redis.createClient({
+  url: 'redis://redis-server:6379'
+  
+}).on('error', err => console.log('Redis Client Error', err))
+  .connect()
+
 const visits_red = 'visits'
 
 client.set(visits_red, 0)
 
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
   //process.exit(1)
-  client.get(visits_red, (err, visits) => {
-    res.send('Number of visits is ' + visits)
-    client.set(visits_red, parseInt(visits) + 1)
-  })
+  let visits = parseInt(await client.get(visits_red));
+  visits++;
+  await client.set(visits_red, visits);
+  res.send('Number of visits is ' + visits)
 })
 
 app.listen(8081, () => {
